@@ -23,6 +23,9 @@ namespace CourseLibraryAPI.Models.Profiles
 
                 .ForMember(dest => dest.Age,
                            opt => opt.MapFrom(src => src.DateOfBirth.CalculateAgeFromDateOfBirth()));
+
+            CreateMap<AuthorCreateDto, Author>();
+
         }
     }
 }

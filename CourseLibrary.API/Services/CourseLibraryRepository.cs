@@ -1,5 +1,6 @@
 ﻿using CourseLib.Domain.Entities;
 using CourseLibrary.Data.Database;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -66,7 +67,8 @@ namespace CourseLibrary.API.Services
 
         public void UpdateCourse(Course course)
         {
-            // no code in this implementation
+           
+            _context.Attach(course).State = EntityState.Modified;
         }
 
         public void AddAuthor(Author author)

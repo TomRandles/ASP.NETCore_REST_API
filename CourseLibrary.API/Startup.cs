@@ -3,11 +3,14 @@ using CourseLibrary.Data.Database;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Serialization;
 using Serilog;
 using System;
 
@@ -30,8 +33,59 @@ namespace CourseLibrary.API
             {
                 // Will return a 406 - media not supported
                 setupActions.ReturnHttpNotAcceptable = true;
-            }).AddXmlDataContractSerializerFormatters(); // Add XML formatter
-            
+                // Add XML formatter. This one supports date time offset value, used in code
+            })
+              // Order important here between json (now default again) and xml 
+              .AddNewtonsoftJson(setupAction =>
+              {
+                  setupAction.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+              })
+              .AddXmlDataContractSerializerFormatters()
+              .ConfigureApiBehaviorOptions(setupAction =>
+                {
+                    setupAction.InvalidModelStateResponseFactory = context =>
+                    {
+                        // create a problem details object
+                        var problemDetailsFactory = context.HttpContext.RequestServices
+                                                           .GetRequiredService<ProblemDetailsFactory>();
+                        var problemDetails = problemDetailsFactory.CreateValidationProblemDetails(
+                                                                   context.HttpContext,
+                                                                   context.ModelState);
+
+                        // add additional info not added by default
+                        problemDetails.Detail = "See the errors field for details.";
+                        problemDetails.Instance = context.HttpContext.Request.Path;
+
+                        // find out which status code to use
+                        var actionExecutingContext =
+                            context as Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext;
+
+                        // if there are modelstate errors & all keys were correctly
+                        // found/parsed we're dealing with validation errors
+                        if ((context.ModelState.ErrorCount > 0) &&
+                            (actionExecutingContext?.ActionArguments.Count == context.ActionDescriptor.Parameters.Count))
+                        {
+                            problemDetails.Type = "https://courselibrary.com/modelvalidationproblem";
+                            problemDetails.Status = StatusCodes.Status422UnprocessableEntity;
+                            problemDetails.Title = "One or more validation errors occurred.";
+
+                            return new UnprocessableEntityObjectResult(problemDetails)
+                            {
+                                ContentTypes = { "application/problem+json" }
+                            };
+                        }
+
+                        // if one of the keys wasn't correctly found / couldn't be parsed
+                        // we're dealing with null/unparsable input
+                        problemDetails.Status = StatusCodes.Status400BadRequest;
+                        problemDetails.Title = "One or more errors on input occurred.";
+                        return new BadRequestObjectResult(problemDetails)
+                        {
+                            ContentTypes = { "application/problem+json" }
+                        };
+                    };
+                });
+
             services.AddScoped<ICourseLibraryRepository, CourseLibraryRepository>();
 
             services.AddDbContext<CourseLibraryContext>(options =>
@@ -70,6 +124,8 @@ namespace CourseLibrary.API
                     });
                 });
             }
+
+            app.UseStatusCodePages();
 
             app.UseHttpsRedirection();
 

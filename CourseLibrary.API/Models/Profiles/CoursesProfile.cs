@@ -1,10 +1,6 @@
 ﻿using AutoMapper;
 using CourseLib.Domain.Entities;
 using CourseLib.Domain.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace CourseLibrary.API.Models.Profiles
 {
@@ -13,6 +9,10 @@ namespace CourseLibrary.API.Models.Profiles
         public CoursesProfile()
         {
             CreateMap<Course, CourseDto>();
+            CreateMap<CourseCreateDto, Course>();
+            CreateMap<CourseUpdateDto, Course>();
+            CreateMap<Course, CourseUpdateDto>();
+
         }
     }
 }
