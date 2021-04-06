@@ -145,7 +145,7 @@ namespace CourseLibrary.API.Controllers
                 coursePatchDocument.ApplyTo(courseDto, ModelState);
                 if (!TryValidateModel(courseDto))
                 {
-                    return ValidationProblem(ModelState)
+                    return ValidationProblem(ModelState);
                 }
 
                 var courseToAdd = _mapper.Map<Course>(courseDto);
