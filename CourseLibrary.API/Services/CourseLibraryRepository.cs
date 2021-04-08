@@ -1,6 +1,9 @@
 ﻿using CourseLib.Domain.Entities;
+using CourseLibrary.API.Helpers;
+using CourseLibrary.API.Models.ResourceParameters;
 using CourseLibrary.Data.Database;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -161,29 +164,41 @@ namespace CourseLibrary.API.Services
             }
         }
 
-        public IEnumerable<Author> GetAuthors(string mainCategory, string searchQuery)
+        public PagedList<Author> GetAuthors(AuthorsResourceParameters resourceParameters)
         {
-            if (string.IsNullOrWhiteSpace(mainCategory) && string.IsNullOrWhiteSpace(searchQuery))
-                return GetAuthors();
+            if (resourceParameters == null)
+                throw new ArgumentNullException(nameof(resourceParameters));
 
             // Cast the Authors db set as IQueryable<Author>. Can use for filters (Where) or searches as
             // required. Avail of deferred execution facility.
             var collection = _context.Authors as IQueryable<Author>;
 
-            if (!string.IsNullOrWhiteSpace(mainCategory))
+            if (!string.IsNullOrWhiteSpace(resourceParameters.MainCategory))
             {
-                mainCategory = mainCategory.Trim();
+                var mainCategory = resourceParameters.MainCategory.Trim();
                 collection = _context.Authors.Where(a => a.MainCategory == mainCategory);
             }
 
-            if (!string.IsNullOrWhiteSpace(searchQuery))
+            if (!string.IsNullOrWhiteSpace(resourceParameters.SearchQuery))
             {
-                searchQuery.Trim();
+                var searchQuery = resourceParameters.SearchQuery.Trim();
                 collection = collection.Where(a => a.MainCategory.Contains(searchQuery)
                              || a.FirstName.Contains(searchQuery)
                              || a.LastName.Contains(searchQuery));
             }
-            return collection.ToList();
+
+            // Add paging after search and filtering 
+
+            var pagedList = PagedList<Author>.Create(collection,
+                                                     resourceParameters.PageNumber,
+                                                     resourceParameters.PageSize);
+
+            return pagedList;
+            //return collection
+            //    // Calculate skip for current invocation (e.g. first call, skip == 0)
+            //    .Skip(resourceParameters.PageSize * (resourceParameters.PageNumber - 1))
+            //    .Take(resourceParameters.PageSize)
+            //    .ToList();
         }
     }
 }

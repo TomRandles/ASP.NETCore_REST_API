@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using CourseLib.Domain.Entities;
 using CourseLib.Domain.Models;
+using CourseLibrary.API.Helpers;
 using CourseLibrary.API.Models.ResourceParameters;
 using CourseLibrary.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace CourseLibrary.API.Controllers
@@ -25,14 +27,33 @@ namespace CourseLibrary.API.Controllers
         }
 
 
-        [HttpGet]
+        [HttpGet(Name ="GetAuthors")]
         [HttpHead]
         public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthorsAsync(
             // Complex type AuthorsResourceParameters requires a [FromQuery] attribute - else will result in 415 SC
             [FromQuery] AuthorsResourceParameters resourceParameters)
         {
-            var authors = _courseLibraryRepository.GetAuthors(resourceParameters.MainCategory,
-                                                              resourceParameters.SearchQuery);
+            var authors = _courseLibraryRepository.GetAuthors(resourceParameters);
+
+            var previousPageLink = authors.HasPrevious ?
+                CreateAuthorsResourceUri(resourceParameters, ResourceUriType.PreviousPage) : null;
+
+            var nextPageLink = authors.HasNext ?
+                CreateAuthorsResourceUri(resourceParameters, ResourceUriType.NextPage) : null;
+
+            var paginationMetaData = new
+            {
+                totalCount = authors.TotalCount,
+                pageSize = authors.PageSize,
+                currentPage = authors.CurrentPage,
+                totalPages = authors.TotalPages,
+                previousPageLink,
+                nextPageLink
+            };
+
+            //Add to header
+            Response.Headers.Add("X-Pagination", 
+                JsonSerializer.Serialize(paginationMetaData));
 
             var authorsToReturn = _mapper.Map<IEnumerable<AuthorDto>>(authors);
 
@@ -94,6 +115,42 @@ namespace CourseLibrary.API.Controllers
             _courseLibraryRepository.Save();
             
             return NoContent();
+        }
+
+        private string CreateAuthorsResourceUri (AuthorsResourceParameters resourceParameters, ResourceUriType type)
+        {
+            switch(type)
+            {
+                case ResourceUriType.PreviousPage:
+                    return Url.Link("GetAuthors",
+                        // Query string parameters
+                        new
+                        {
+                            pageNumber=resourceParameters.PageNumber -1,
+                            pageSize=resourceParameters.PageSize,
+                            mainCategory = resourceParameters.MainCategory,
+                            searchQuery = resourceParameters.SearchQuery
+                        });
+                case ResourceUriType.NextPage:
+                    return Url.Link("GetAuthors",
+                        new
+                        {
+                            pageNumber = resourceParameters.PageNumber + 1,
+                            pageSize = resourceParameters.PageSize,
+                            mainCategory = resourceParameters.MainCategory,
+                            searchQuery = resourceParameters.SearchQuery
+                        });
+                default:
+                    // Return current page as default
+                    return Url.Link("GetAuthors",
+                        new
+                        {
+                            pageNumber = resourceParameters.PageNumber,
+                            pageSize = resourceParameters.PageSize,
+                            mainCategory = resourceParameters.MainCategory,
+                            searchQuery = resourceParameters.SearchQuery
+                        });
+            }
         }
     }
 }
