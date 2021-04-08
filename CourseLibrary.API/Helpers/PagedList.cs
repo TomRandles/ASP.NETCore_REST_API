@@ -6,13 +6,12 @@ namespace CourseLibrary.API.Helpers
 {
     public class PagedList<T> : List<T>
     {
-        private PagedList(List<T> items, int currentPage, int pageSize, int totalCount)
+        private PagedList(List<T> items, int count, int pageNumber, int pageSize)
         {
-            CurrentPage = currentPage;
-            
+            TotalCount = count;
             PageSize = pageSize;
-            TotalCount = totalCount;
-            TotalPages = (int)Math.Ceiling(totalCount /(double)pageSize);
+            CurrentPage = pageNumber;
+            TotalPages = (int)Math.Ceiling(TotalCount /(double)pageSize);
             AddRange(items);
         }
 
