@@ -22,6 +22,34 @@ namespace CourseLibrary.API.Services
             _propertyMappings.Add(new PropertyMapping<AuthorDto, Author>(_authorPropertyMapping));
         }
 
+        public bool ValidMappingExistsFor<TSource, TDestination>(string fields)
+        {
+            var propertyMapping = GetPropertyMapping<TSource, TDestination>();
+
+            if (string.IsNullOrWhiteSpace(fields))
+                return true;
+
+            // split fields on coma
+            var fieldSplit = fields.Split(',');
+
+            // Iterate through properties and validate
+            foreach (var field in fieldSplit)
+            {
+                var trimmedField = field.Trim();
+
+                var indexOfFirstSpace = trimmedField.IndexOf(" ");
+                var propertyName = indexOfFirstSpace == -1 ? trimmedField :
+                    trimmedField.Remove(indexOfFirstSpace);
+
+                // find matching property
+                if (!propertyMapping.ContainsKey(propertyName))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         // Use marker interface to resolve 
         private IList<IPropertyMapping> _propertyMappings = new List<IPropertyMapping>();
         public Dictionary<string, PropertyMappingValue> GetPropertyMapping<TSource, TDestination>()
