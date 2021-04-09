@@ -187,6 +187,15 @@ namespace CourseLibrary.API.Services
                              || a.LastName.Contains(searchQuery));
             }
 
+            // Implement default ordering
+            if (!string.IsNullOrWhiteSpace(resourceParameters.OrderBy))
+            {
+                if (resourceParameters.OrderBy.ToLowerInvariant() == "name")
+                {
+                    collection = collection.OrderBy(a => a.FirstName).ThenBy(a => a.LastName);
+                }
+            }
+
             // Add paging after search and filtering 
 
             var pagedList = PagedList<Author>.Create(collection,

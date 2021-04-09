@@ -94,6 +94,9 @@ namespace CourseLibrary.API
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             });
 
+            // Transient - for lightweight, stateless services - recommended
+            services.AddTransient<IPropertyMappingService, PropertyMappingService>();
+
             // Automapper for Dto to/from entity object mapping
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
