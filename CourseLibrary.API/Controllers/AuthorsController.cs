@@ -19,26 +19,37 @@ namespace CourseLibrary.API.Controllers
         private readonly ICourseLibraryRepository _courseLibraryRepository;
         private readonly IMapper _mapper;
         private readonly IPropertyMappingService _propertyMappingService;
+        private readonly IPropertyCheckerService _propertyCheckerService;
 
         public AuthorsController(ICourseLibraryRepository courseLibraryRepository, 
                                  IMapper mapper, 
-                                 IPropertyMappingService propertyMappingService)
+                                 IPropertyMappingService propertyMappingService,
+                                 IPropertyCheckerService propertyCheckerService)
         {
-            this._courseLibraryRepository = courseLibraryRepository
-                ?? throw new ArgumentNullException(nameof(courseLibraryRepository));
+            this._courseLibraryRepository = courseLibraryRepository ??
+                 throw new ArgumentNullException(nameof(courseLibraryRepository));
             this._mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            this._propertyMappingService = propertyMappingService;
+            this._propertyMappingService = propertyMappingService ?? 
+                throw new ArgumentNullException(nameof(propertyMappingService));
+            this._propertyCheckerService = propertyCheckerService ?? 
+                throw new ArgumentNullException(nameof(propertyCheckerService));
         }
-
 
         [HttpGet(Name ="GetAuthors")]
         [HttpHead]
-        public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthorsAsync(
+        public async Task<IActionResult> GetAuthorsAsync(
             // Complex type AuthorsResourceParameters requires a [FromQuery] attribute - else will result in 415 SC
             [FromQuery] AuthorsResourceParameters resourceParameters)
         {
+
             // Validate incoming orderBy, if present
             if (!_propertyMappingService.ValidMappingExistsFor<AuthorDto, Author>(resourceParameters.OrderBy))
+            {
+                return BadRequest();
+            }
+
+            // Check fields. if present, are valid properties
+            if (!_propertyCheckerService.TypeHasProperties<AuthorDto>(resourceParameters.Fields))
             {
                 return BadRequest();
             }
@@ -65,20 +76,28 @@ namespace CourseLibrary.API.Controllers
             Response.Headers.Add("X-Pagination", 
                 JsonSerializer.Serialize(paginationMetaData));
 
-            var authorsToReturn = _mapper.Map<IEnumerable<AuthorDto>>(authors);
+            var authorsToReturn = _mapper.Map<IEnumerable<AuthorDto>>(authors)
+                                         .ShapeData(resourceParameters.Fields);
 
             return Ok(authorsToReturn);
         }
 
         [HttpGet("{authorId}", Name="GetAuthor")]
         [HttpHead("{authorId}")]
-        public async Task<ActionResult<AuthorDto>> GetAuthorAsync(Guid authorId)
+        public async Task<ActionResult<AuthorDto>> GetAuthorAsync(Guid authorId, string fields)
         {
+            // Check fields, if present, are valid properties
+            if (!_propertyCheckerService.TypeHasProperties<AuthorDto>(fields))
+            {
+                return BadRequest();
+            }
+
             var author = _courseLibraryRepository.GetAuthor(authorId);
+
             if (author == null)
                 return NotFound();
 
-            var authorToReturn = _mapper.Map<AuthorDto>(author);
+            var authorToReturn = _mapper.Map<AuthorDto>(author).ShapeData(fields);
             return Ok(authorToReturn);
         }
         [HttpPost]
@@ -136,6 +155,7 @@ namespace CourseLibrary.API.Controllers
                         // Query string parameters
                         new
                         {
+                            fields = resourceParameters.Fields,
                             orderBy = resourceParameters.OrderBy,
                             pageNumber=resourceParameters.PageNumber -1,
                             pageSize=resourceParameters.PageSize,
@@ -146,6 +166,7 @@ namespace CourseLibrary.API.Controllers
                     return Url.Link("GetAuthors",
                         new
                         {
+                            fields = resourceParameters.Fields,
                             orderBy = resourceParameters.OrderBy,
                             pageNumber = resourceParameters.PageNumber + 1,
                             pageSize = resourceParameters.PageSize,
@@ -157,6 +178,7 @@ namespace CourseLibrary.API.Controllers
                     return Url.Link("GetAuthors",
                         new
                         {
+                            fields = resourceParameters.Fields,
                             orderBy = resourceParameters.OrderBy,
                             pageNumber = resourceParameters.PageNumber,
                             pageSize = resourceParameters.PageSize,

@@ -97,6 +97,9 @@ namespace CourseLibrary.API
             // Transient - for lightweight, stateless services - recommended
             services.AddTransient<IPropertyMappingService, PropertyMappingService>();
 
+            // Property checking service for incoming HTTP traffic
+            services.AddTransient<IPropertyCheckerService, PropertyCheckerService>();
+
             // Automapper for Dto to/from entity object mapping
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
