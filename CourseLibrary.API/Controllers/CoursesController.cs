@@ -29,7 +29,7 @@ namespace CourseLibrary.API.Controllers
             this._mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        [HttpGet]
+        [HttpGet(Name = "GetCoursesForAuthor")]
         [HttpHead]
         public async Task<ActionResult<IEnumerable<AuthorDto>>> GetCoursesForAuthor(Guid authorId)
         {
@@ -60,7 +60,7 @@ namespace CourseLibrary.API.Controllers
             return Ok(courseToReturn);
         }
 
-        [HttpPost]
+        [HttpPost(Name ="CreateCourseForAuthor")]
         public async Task<ActionResult<CourseDto>> CreateCourseForAuthor(Guid authorId,
                                                                          [FromBody] CourseCreateDto course)
         {
