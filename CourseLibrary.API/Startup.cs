@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -13,6 +14,7 @@ using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using System;
+using System.Linq;
 
 namespace CourseLibrary.API
 {
@@ -93,6 +95,19 @@ namespace CourseLibrary.API
                 options.UseSqlServer(Configuration.GetConnectionString("DbConnection"))
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             });
+
+            // Add media type to existing formatter
+            services.Configure<MvcOptions>(config =>
+            {
+                var newtonsoftJsonOutputFormatter = config.OutputFormatters
+                    .OfType<NewtonsoftJsonOutputFormatter>()?.FirstOrDefault();
+
+                if (newtonsoftJsonOutputFormatter != null)
+                {
+                    newtonsoftJsonOutputFormatter.SupportedMediaTypes.Add("application/vnd.marvin.hateoas+json");
+                }
+            });
+
 
             // Transient - for lightweight, stateless services - recommended
             services.AddTransient<IPropertyMappingService, PropertyMappingService>();

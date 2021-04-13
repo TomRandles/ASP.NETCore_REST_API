@@ -4,12 +4,17 @@ namespace CourseLib.Domain.Utilities
 {
     public static class DateCalculations
     {
-        public static int CalculateAgeFromDateOfBirth(this DateTimeOffset dateTimeOffset)
+        public static int CalculateAgeFromDateOfBirth(this DateTimeOffset dateTimeOffset, 
+                                                      DateTimeOffset? dateOfDeath)
         {
-            var currentDate = DateTime.UtcNow;
-            int age = currentDate.Year - dateTimeOffset.Year;
+            var dateToCalculateEndAge = DateTime.UtcNow;
 
-            if (currentDate < dateTimeOffset.AddYears(age))
+            if (dateOfDeath != null)
+                dateToCalculateEndAge = dateOfDeath.Value.UtcDateTime;    
+
+            int age = dateToCalculateEndAge.Year - dateTimeOffset.Year;
+
+            if (dateToCalculateEndAge < dateTimeOffset.AddYears(age))
             {
                 age--;
             }

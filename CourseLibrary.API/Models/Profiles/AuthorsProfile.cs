@@ -3,13 +3,6 @@ using CourseLib.Domain.Entities;
 using CourseLib.Domain.Models;
 using CourseLib.Domain.Utilities;
 
-/*
- *             CreateMap<Entities.Author, Models.AuthorDto>()
-                .ForMember(
-                    dest => dest.Name, 
-                    opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
-*/
-
 namespace CourseLibraryAPI.Models.Profiles
 {
     public class AuthorsProfile : Profile
@@ -22,10 +15,13 @@ namespace CourseLibraryAPI.Models.Profiles
                            opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
 
                 .ForMember(dest => dest.Age,
-                           opt => opt.MapFrom(src => src.DateOfBirth.CalculateAgeFromDateOfBirth()));
+                           opt => opt.MapFrom(src => src.DateOfBirth.CalculateAgeFromDateOfBirth(src.DateOfDeath)));
 
             CreateMap<AuthorCreateDto, Author>();
 
+            CreateMap<AuthorCreateWithDateOfDeathDto, Author>();
+
+            CreateMap<Author, AuthorFullDto>();
         }
     }
 }
