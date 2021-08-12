@@ -5,7 +5,7 @@ using CourseLibrary.API.ActionConstraints;
 using CourseLibrary.API.Helpers;
 using CourseLibrary.API.Models;
 using CourseLibrary.API.Models.ResourceParameters;
-using CourseLibrary.API.Services;
+using CourseLibrary.API.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
 using System;
@@ -16,7 +16,14 @@ using System.Threading.Tasks;
 
 namespace CourseLibrary.API.Controllers
 {
+    // AuthorsController - name aligns with naming guidelines.
+    // ControllerBase - contains basic controller functionality: access to the ModelState,
+    // common methods to return responses, current user.
+    // NB: No Views support. Not required.
+    // [ApiController] - Improves developer experience for APIs: Attribute routing, returning automatic status codes,
+    // returning problem details on errors. 
     [ApiController]
+    // Attribute routing 
     [Route("api/authors")]
     public class AuthorsController : ControllerBase
     {
@@ -38,17 +45,20 @@ namespace CourseLibrary.API.Controllers
             this._propertyCheckerService = propertyCheckerService ??
                 throw new ArgumentNullException(nameof(propertyCheckerService));
         }
-
+        
+        // Implement API outer contract
         [HttpGet(Name = "GetAuthors")]
         [HttpHead]
+        // IActionResult - Defines an action return contract. Returns the result of an action method.
+        // The ActionResult types represent various HTTP status codes. 
         public async Task<IActionResult> GetAuthorsAsync(
-            // Complex type AuthorsResourceParameters requires a [FromQuery] attribute - else will result in 415 SC
-            [FromQuery] AuthorsResourceParameters resourceParameters)
+        // Complex type AuthorsResourceParameters requires a [FromQuery] attribute - else will result in 415 SC
+        [FromQuery] AuthorsResourceParameters resourceParameters)
         {
-
             // Validate incoming orderBy, if present
             if (!_propertyMappingService.ValidMappingExistsFor<AuthorDto, Author>(resourceParameters.OrderBy))
             {
+                // Return http 400 sc -bad request 
                 return BadRequest();
             }
 
@@ -79,7 +89,7 @@ namespace CourseLibrary.API.Controllers
 
             var shapedAuthorsWithLinks = shapedAuthors.Select(author =>
             {
-                var authorAsDictionary = author as IDictionary<string, object>;
+                IDictionary<string, object> authorAsDictionary = author as IDictionary<string, object>;
                 var authorLinks = CreateLinksForAuthor((Guid)authorAsDictionary["Id"]);
                 authorAsDictionary.Add("links", authorLinks);
                 return authorAsDictionary;
@@ -90,6 +100,8 @@ namespace CourseLibrary.API.Controllers
                 value = shapedAuthorsWithLinks,
                 links
             };
+            // returns a http status code 200 - ok.
+            // Ok - allows for different payload types - content negotiation
             return Ok(linkedCollectionResource);
         }
 
@@ -122,8 +134,9 @@ namespace CourseLibrary.API.Controllers
             }
 
             var author = _courseLibraryRepository.GetAuthor(authorId);
-
+            // 
             if (author == null)
+                // Returns http sc 404 - not found
                 return NotFound();
 
             IEnumerable<LinkDto> links = new List<LinkDto>();

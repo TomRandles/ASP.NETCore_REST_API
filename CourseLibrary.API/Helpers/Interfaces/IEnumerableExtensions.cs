@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Reflection;
 
-namespace CourseLibrary.API.Helpers
+namespace CourseLibrary.API.Helpers.Interfaces
 {
     public static class IEnumerableExtensions
     {

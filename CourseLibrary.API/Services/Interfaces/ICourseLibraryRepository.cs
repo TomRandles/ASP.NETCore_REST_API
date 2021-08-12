@@ -4,7 +4,7 @@ using CourseLibrary.API.Models.ResourceParameters;
 using System;
 using System.Collections.Generic;
 
-namespace CourseLibrary.API.Services
+namespace CourseLibrary.API.Services.Interfaces
 {
     public interface ICourseLibraryRepository
     {    

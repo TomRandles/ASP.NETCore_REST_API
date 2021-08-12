@@ -1,4 +1,5 @@
 using CourseLibrary.API.Services;
+using CourseLibrary.API.Services.Interfaces;
 using CourseLibrary.Data.Database;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -33,7 +34,7 @@ namespace CourseLibrary.API
 
             services.AddControllers(setupActions =>
             {
-                // Will return a 406 - media not supported
+                // Will return a 406 - media not supported if Accept header media type not supported.
                 setupActions.ReturnHttpNotAcceptable = true;
                 // Add XML formatter. This one supports date time offset value, used in code
             })
@@ -42,6 +43,7 @@ namespace CourseLibrary.API
               {
                   setupAction.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
               })
+              // .Net 3.x preferred way of adding formatters
               .AddXmlDataContractSerializerFormatters()
               .ConfigureApiBehaviorOptions(setupAction =>
                 {
@@ -150,12 +152,18 @@ namespace CourseLibrary.API
 
             app.UseHttpsRedirection();
 
+            // Marks point where routing decisions are made, i.e. where an endpoint is selected.
             app.UseRouting();
 
             app.UseAuthorization();
 
+            // Marks the point where the selected endpoint is executed.
+            // Can now inject middleware between the selection and execution of endpoint.
+            // E.g. Authentication middleware.
             app.UseEndpoints(endpoints =>
             {
+                // Adds endpoints for controller actions to routing. NB: no routes are specified.
+                // Will use attribute routing - best practice. Preferred for APIs.
                 endpoints.MapControllers();
             });
         }

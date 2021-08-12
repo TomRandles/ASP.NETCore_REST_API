@@ -1,7 +1,6 @@
-﻿using System;
+﻿using CourseLibrary.API.Services.Interfaces;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace CourseLibrary.API.Services
 {

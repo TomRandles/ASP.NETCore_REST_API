@@ -1,5 +1,6 @@
 ﻿using CourseLib.Domain.Entities;
 using CourseLib.Domain.Models;
+using CourseLibrary.API.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;

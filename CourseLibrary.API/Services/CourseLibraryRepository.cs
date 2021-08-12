@@ -2,6 +2,7 @@
 using CourseLib.Domain.Models;
 using CourseLibrary.API.Helpers;
 using CourseLibrary.API.Models.ResourceParameters;
+using CourseLibrary.API.Services.Interfaces;
 using CourseLibrary.Data.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace CourseLibrary.API.Services
+namespace CourseLibrary.API.Services.Interfaces
 {
     public interface IPropertyMappingService
     {
