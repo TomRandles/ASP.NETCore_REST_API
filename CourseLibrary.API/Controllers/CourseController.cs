@@ -1,59 +1,62 @@
 ﻿using AutoMapper;
 using CourseLib.Domain.Entities;
 using CourseLib.Domain.Models;
-using CourseLibrary.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using CourseLib.Domain;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using CourseLibrary.API.Services.Interfaces;
 
 namespace CourseLibrary.API.Controllers
 {
     [ApiController]
     [Route("api/authors/{authorId}/courses")]
-    public class CoursesController : ControllerBase
+    public class CourseController : ControllerBase
     {
+        private readonly IAuthorLibraryRepository _authorRepository;
         private readonly ICourseLibraryRepository _courseRepository;
         private readonly IMapper _mapper;
 
-        public CoursesController(ICourseLibraryRepository courseRepository, IMapper mapper)
+        public CourseController(IAuthorLibraryRepository authorRepository, 
+                                ICourseLibraryRepository courseRepository, 
+                                IMapper mapper)
         {
-            this._courseRepository = courseRepository
+            _authorRepository = authorRepository
+                    ?? throw new ArgumentNullException(nameof(authorRepository));
+            _courseRepository = courseRepository
                 ?? throw new ArgumentNullException(nameof(courseRepository));
-            this._mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
         [HttpGet(Name = "GetCoursesForAuthor")]
         [HttpHead]
         public async Task<ActionResult<IEnumerable<AuthorDto>>> GetCoursesForAuthor(Guid authorId)
         {
-            if (!_courseRepository.AuthorExists(authorId))
+            if (!await _authorRepository.AuthorExistsAsync(authorId))
             {
                 return NotFound();
             }
-            var courses = _courseRepository.GetCourses(authorId);
+            var courses = await _courseRepository.GetCoursesAsync(authorId);
             var coursesToReturn = _mapper.Map<IEnumerable<CourseDto>>(courses);
 
             return Ok(coursesToReturn);
         }
 
-
         [HttpGet("{courseId}", Name = "GetCourseForAuthor")]
         [HttpHead("{courseId}")]
         public async Task<ActionResult<IEnumerable<AuthorDto>>> GetCourseForAuthor(Guid authorId, Guid courseId)
         {
-            if (!_courseRepository.AuthorExists(authorId))
+            if (!await _authorRepository.AuthorExistsAsync(authorId))
             {
                 return NotFound();
             }
 
-            var course = _courseRepository.GetCourse(authorId, courseId);
+            var course = await _courseRepository.GetCourseAsync(authorId, courseId);
             if (course == null)
                 NotFound();
             var courseToReturn = _mapper.Map<CourseDto>(course);
@@ -64,7 +67,7 @@ namespace CourseLibrary.API.Controllers
         public async Task<ActionResult<CourseDto>> CreateCourseForAuthor(Guid authorId,
                                                                          [FromBody] CourseCreateDto course)
         {
-            if (!_courseRepository.AuthorExists(authorId))
+            if (!await _authorRepository.AuthorExistsAsync(authorId))
             {
                 return NotFound();
             }
@@ -72,8 +75,7 @@ namespace CourseLibrary.API.Controllers
             try
             {
                 var courseEntity = _mapper.Map<Course>(course);
-                _courseRepository.AddCourse(authorId, courseEntity);
-                _courseRepository.Save();
+                await _courseRepository.AddCourseAsync(authorId, courseEntity);
 
                 var courseToReturn = _mapper.Map<CourseDto>(courseEntity);
 
@@ -92,25 +94,24 @@ namespace CourseLibrary.API.Controllers
         // Use IActionResult for return type - nothing or a created course returned
         [HttpPut("{courseId}")]
         public async Task<IActionResult> UpdateCourseForAuthor(Guid authorId,
-                                                              Guid courseId,
-                                                              CourseUpdateDto course)
+                                                               Guid courseId,
+                                                               CourseUpdateDto course)
         {
             //Check if author exists
-            if (!_courseRepository.AuthorExists(authorId))
+            if (!await _authorRepository.AuthorExistsAsync(authorId))
             {
                 return NotFound();
             }
 
             //Check if course exists
-            var courseForAuthorEntity = _courseRepository.GetCourse(authorId, courseId);
+            var courseForAuthorEntity = await _courseRepository.GetCourseAsync(authorId, courseId);
             if (courseForAuthorEntity == null)
             {
                 // return NotFound();
                 // Upinsert pattern - need to create the course Id
                 var courseToAdd = _mapper.Map<Course>(course);
                 courseToAdd.Id = courseId;
-                _courseRepository.AddCourse(authorId, courseToAdd);
-                _courseRepository.Save();
+                await _courseRepository.AddCourseAsync(authorId, courseToAdd);
 
                 //201 return
                 var courseToReturn = _mapper.Map<CourseDto>(courseToAdd);
@@ -120,8 +121,7 @@ namespace CourseLibrary.API.Controllers
 
             // map 
             _mapper.Map(course, courseForAuthorEntity);
-            _courseRepository.UpdateCourse(courseForAuthorEntity);
-            _courseRepository.Save();
+            await _courseRepository.UpdateCourseAsync(courseForAuthorEntity);
             return NoContent();
         }
 
@@ -132,12 +132,11 @@ namespace CourseLibrary.API.Controllers
             // CourseUpdateDto cannot contain and Id
             [FromBody] JsonPatchDocument<CourseUpdateDto> coursePatchDocument)
         {
-            if (!_courseRepository.AuthorExists(authorId))
+            if (!await _authorRepository.AuthorExistsAsync(authorId))
             {
                 return NotFound();
             }
-
-            var courseFromDb = _courseRepository.GetCourse(authorId, courseId);
+            var courseFromDb = await _courseRepository.GetCourseAsync(authorId, courseId);
             if (courseFromDb == null)
             {
                 // Upserting with PATCH. Includes normal validation
@@ -151,8 +150,7 @@ namespace CourseLibrary.API.Controllers
                 var courseToAdd = _mapper.Map<Course>(courseDto);
                 courseToAdd.Id = courseId;
 
-                _courseRepository.AddCourse(authorId, courseToAdd);
-                _courseRepository.Save();
+                await _courseRepository.AddCourseAsync(authorId, courseToAdd);
 
                 var courseToReturn = _mapper.Map<CourseDto>(courseToAdd);
 
@@ -171,32 +169,28 @@ namespace CourseLibrary.API.Controllers
             }
 
             _mapper.Map(courseToPatch, courseFromDb);
-            _courseRepository.UpdateCourse(courseFromDb);
-            _courseRepository.Save();
-
+            await _courseRepository.UpdateCourseAsync(courseFromDb);
+            
             return NoContent();
         }
 
         [HttpDelete("{courseId}")]
-        public ActionResult DeleteCourseForAuthor(Guid authorId, Guid courseId)
+        public async Task<ActionResult> DeleteCourseForAuthor(Guid authorId, Guid courseId)
         {
-            if (!_courseRepository.AuthorExists(authorId))
+            if (!await _authorRepository.AuthorExistsAsync(authorId))
             {
                 return NotFound();
             }
 
-            var courseFromDb = _courseRepository.GetCourse(authorId, courseId);
+            var courseFromDb = await _courseRepository.GetCourseAsync(authorId, courseId);
             if (courseFromDb == null)
             {
                 return NotFound();
             }
 
-            _courseRepository.DeleteCourse(courseFromDb);
-            _courseRepository.Save();
+            await _courseRepository.DeleteCourseAsync(courseFromDb);
             return NoContent();
         }
-
-
         public override ActionResult ValidationProblem (
             [ActionResultObjectValue] ModelStateDictionary modelStateDictionary)
         {

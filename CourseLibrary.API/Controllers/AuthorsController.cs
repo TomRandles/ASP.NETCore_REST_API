@@ -27,18 +27,18 @@ namespace CourseLibrary.API.Controllers
     [Route("api/authors")]
     public class AuthorsController : ControllerBase
     {
-        private readonly ICourseLibraryRepository _courseLibraryRepository;
+        private readonly IAuthorLibraryRepository _authorLibraryRepository;
         private readonly IMapper _mapper;
         private readonly IPropertyMappingService _propertyMappingService;
         private readonly IPropertyCheckerService _propertyCheckerService;
 
-        public AuthorsController(ICourseLibraryRepository courseLibraryRepository,
+        public AuthorsController(IAuthorLibraryRepository authorLibraryRepository,
                                  IMapper mapper,
                                  IPropertyMappingService propertyMappingService,
                                  IPropertyCheckerService propertyCheckerService)
         {
-            this._courseLibraryRepository = courseLibraryRepository ??
-                 throw new ArgumentNullException(nameof(courseLibraryRepository));
+            _authorLibraryRepository = authorLibraryRepository ??
+                 throw new ArgumentNullException(nameof(authorLibraryRepository));
             this._mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             this._propertyMappingService = propertyMappingService ??
                 throw new ArgumentNullException(nameof(propertyMappingService));
@@ -48,6 +48,7 @@ namespace CourseLibrary.API.Controllers
         
         // Implement API outer contract
         [HttpGet(Name = "GetAuthors")]
+        // Support the HTTP HEAD method. Will not include a response body.
         [HttpHead]
         // IActionResult - Defines an action return contract. Returns the result of an action method.
         // The ActionResult types represent various HTTP status codes. 
@@ -68,7 +69,7 @@ namespace CourseLibrary.API.Controllers
                 return BadRequest();
             }
 
-            var authors = _courseLibraryRepository.GetAuthors(resourceParameters);
+            var authors = await _authorLibraryRepository.GetAuthorsAsync(resourceParameters);
 
             var paginationMetaData = new
             {
@@ -114,6 +115,7 @@ namespace CourseLibrary.API.Controllers
                   "application/vnd.marvin.author.friendly+json",
                   "application/vnd.marvin.author.friendly.hateoas+json"
                  )]
+        // Name facilitates references to this action. 
         [HttpGet("{authorId}", Name = "GetAuthor")]
         [HttpHead("{authorId}")]
         public async Task<ActionResult<AuthorDto>> GetAuthorAsync(Guid authorId,
@@ -133,7 +135,7 @@ namespace CourseLibrary.API.Controllers
                 return BadRequest();
             }
 
-            var author = _courseLibraryRepository.GetAuthor(authorId);
+            var author = await _authorLibraryRepository.GetAuthorAsync(authorId);
             // 
             if (author == null)
                 // Returns http sc 404 - not found
@@ -187,8 +189,7 @@ namespace CourseLibrary.API.Controllers
             try
             {
                 var authorEntity = _mapper.Map<Author>(author);
-                _courseLibraryRepository.AddAuthor(authorEntity);
-                _courseLibraryRepository.Save();
+                await _authorLibraryRepository.AddAuthorAsync(authorEntity);
 
                 //Implement HATEOAS
                 var links = CreateLinksForAuthor(authorEntity.Id);
@@ -201,7 +202,9 @@ namespace CourseLibrary.API.Controllers
                 // add links property 
                 linkedResourceToReturn.Add("links", links);
 
-                //HTTP SC 201 response
+                //CreatedAtRoute - results in HTTP SC 201 response
+                //               - facilitates a response with a location header
+                //               - Contains the URI for the newly created author
                 return CreatedAtRoute("GetAuthor",
                                       new { authorId = linkedResourceToReturn["Id"] },
                                       linkedResourceToReturn);
@@ -222,11 +225,12 @@ namespace CourseLibrary.API.Controllers
         [Consumes("application/json", "application/vnd.marvin.authorforcreation+json")]
         public async Task<ActionResult<AuthorDto>> CreateAuthor([FromBody] AuthorCreateDto author)
         {
+            // .Net now automatically sends BadRequest 400 for null parameter. No need to check. 
+
             try
             {
                 var authorEntity = _mapper.Map<Author>(author);
-                _courseLibraryRepository.AddAuthor(authorEntity);
-                _courseLibraryRepository.Save();
+                await _authorLibraryRepository.AddAuthorAsync(authorEntity);
 
                 //Implement HATEOAS
                 var links = CreateLinksForAuthor(authorEntity.Id);
@@ -261,9 +265,9 @@ namespace CourseLibrary.API.Controllers
         }
 
         [HttpDelete("{authorId}", Name = "DeleteAuthor")]
-        public ActionResult DeleteAuthor(Guid authorId)
+        public async Task<ActionResult> DeleteAuthorAsync(Guid authorId)
         {
-            var author = _courseLibraryRepository.GetAuthor(authorId);
+            var author = await _authorLibraryRepository.GetAuthorAsync(authorId);
             if (author == null)
             {
                 return NotFound();
@@ -271,13 +275,13 @@ namespace CourseLibrary.API.Controllers
 
             // NB - Cascade-on-Delete is on by default. So courses
             // (child objects) are deleted by default
-            _courseLibraryRepository.DeleteAuthor(author);
-            _courseLibraryRepository.Save();
+            await _authorLibraryRepository.DeleteAuthorAsync(author);
 
             return NoContent();
         }
 
-        private string CreateAuthorsResourceUri(AuthorsResourceParameters resourceParameters, ResourceUriType type)
+        private string CreateAuthorsResourceUri(AuthorsResourceParameters resourceParameters, 
+                                                ResourceUriType type)
         {
             switch (type)
             {
@@ -323,7 +327,8 @@ namespace CourseLibrary.API.Controllers
         }
 
         private IEnumerable<LinkDto> CreateLinksForAuthors(AuthorsResourceParameters resourceParameters,
-                                                           bool hasNext, bool hasPrevious)
+                                                           bool hasNext, 
+                                                           bool hasPrevious)
         {
             var links = new List<LinkDto>();
 

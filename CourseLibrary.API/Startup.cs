@@ -137,6 +137,8 @@ namespace CourseLibrary.API
             }
             else
             {
+                // Handler used in production which is configurable
+                // Will generate 500 sc - server errors. 
                 app.UseExceptionHandler(appBuilder =>
                 {
                     appBuilder.Run(async context =>
