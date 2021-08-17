@@ -73,7 +73,8 @@ namespace CourseLibrary.API.Services
         public async Task UpdateCourseAsync(Course course)
         {
            
-            _context.Attach(course).State = EntityState.Modified;
+            // EF core - tracker marks entity as modified. No extra code required. 
+            // SaveAsync will ensure modifications are saved in Db
             await SaveAsync();
         }
         public async Task<bool> SaveAsync()

@@ -91,7 +91,9 @@ namespace CourseLibrary.API.Controllers
             }
         }
 
+        //
         // Use IActionResult for return type - nothing or a created course returned
+        // CourseUpdateDto - contains payload for update request. 
         [HttpPut("{courseId}")]
         public async Task<IActionResult> UpdateCourseForAuthor(Guid authorId,
                                                                Guid courseId,
@@ -108,20 +110,22 @@ namespace CourseLibrary.API.Controllers
             if (courseForAuthorEntity == null)
             {
                 // return NotFound();
-                // Upinsert pattern - need to create the course Id
+                // Upsert pattern - need to create the course
                 var courseToAdd = _mapper.Map<Course>(course);
+                // Get course Id from URI
                 courseToAdd.Id = courseId;
                 await _courseRepository.AddCourseAsync(authorId, courseToAdd);
 
-                //201 return
+                //201 return - correct sc since a new resource has been created. 
                 var courseToReturn = _mapper.Map<CourseDto>(courseToAdd);
                 return CreatedAtRoute("GetCourseForAuthor",
                     new { authorId, courseId = courseToReturn.Id }, courseToReturn);
             }
 
-            // map 
+            // EF core - tracker marks entity as modified.
             _mapper.Map(course, courseForAuthorEntity);
             await _courseRepository.UpdateCourseAsync(courseForAuthorEntity);
+            // Status code 204 - no content returned
             return NoContent();
         }
 
@@ -159,12 +163,15 @@ namespace CourseLibrary.API.Controllers
 
             var courseToPatch = _mapper.Map<CourseUpdateDto>(courseFromDb);
 
-            // Add validation
+            // Validation - adding ModelState argument in ApplyTo will cause any errors in the patch document to make
+            // the ModelState invalid. TryValidateModel below looks after reporting validation issues found here
             coursePatchDocument.ApplyTo(courseToPatch, ModelState);
 
+            // Add validation after completing work with jsonPatch document 
             // Validate that the incoming Dto class properties. Errors captured in ModelState
             if (!TryValidateModel(courseToPatch))
             {
+                // Creates an ActionResult - sc 400 bad request with errors from modelStateDictionary
                 return ValidationProblem(ModelState);
             }
 
@@ -191,6 +198,10 @@ namespace CourseLibrary.API.Controllers
             await _courseRepository.DeleteCourseAsync(courseFromDb);
             return NoContent();
         }
+
+        // Ensure InvalidModelStateResponseFactory configured in Startup.cs is used instead of default controller
+        // ValidationProblem
+        // Ensures a 422 Unprocessable Entity, as configured, is returned for an invalid json patch object
         public override ActionResult ValidationProblem (
             [ActionResultObjectValue] ModelStateDictionary modelStateDictionary)
         {

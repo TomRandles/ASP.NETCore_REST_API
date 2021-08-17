@@ -38,20 +38,26 @@ namespace CourseLibrary.API
                 setupActions.ReturnHttpNotAcceptable = true;
                 // Add XML formatter. This one supports date time offset value, used in code
             })
-              // Order important here between json (now default again) and xml 
+              // Order important here between json (now default again) and xml. Accept & Content-type header
+              // overrides these defaults. 
+              // Preferred Json package as of 3.x 
               .AddNewtonsoftJson(setupAction =>
               {
-                  setupAction.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                  setupAction.SerializerSettings.ContractResolver = 
+                      new CamelCasePropertyNamesContractResolver();
               })
               // .Net 3.x preferred way of adding formatters
               .AddXmlDataContractSerializerFormatters()
               .ConfigureApiBehaviorOptions(setupAction =>
                 {
+                    // Customising validation error responses
+                    // Executed when the model state is invalid
                     setupAction.InvalidModelStateResponseFactory = context =>
                     {
                         // create a problem details object
                         var problemDetailsFactory = context.HttpContext.RequestServices
                                                            .GetRequiredService<ProblemDetailsFactory>();
+                        // translate errors to RFC 7807 format
                         var problemDetails = problemDetailsFactory.CreateValidationProblemDetails(
                                                                    context.HttpContext,
                                                                    context.ModelState);
@@ -64,7 +70,7 @@ namespace CourseLibrary.API
                         var actionExecutingContext =
                             context as Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext;
 
-                        // if there are modelstate errors & all keys were correctly
+                        // if there are ModelState errors & all keys were correctly
                         // found/parsed we're dealing with validation errors
                         if ((context.ModelState.ErrorCount > 0) &&
                             (actionExecutingContext?.ActionArguments.Count == context.ActionDescriptor.Parameters.Count))

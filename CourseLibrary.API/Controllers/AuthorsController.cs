@@ -257,6 +257,7 @@ namespace CourseLibrary.API.Controllers
             }
         }
 
+        // Identifies an action that supports the HTTP OPTIONS method 
         [HttpOptions]
         public IActionResult GetAuthorsOptions()
         {
