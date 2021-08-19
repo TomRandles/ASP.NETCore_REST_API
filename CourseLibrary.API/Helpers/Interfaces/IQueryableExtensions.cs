@@ -3,14 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
-using System.Threading.Tasks;
 
 namespace CourseLibrary.API.Helpers
 {
+
     public static class IQueryableExtensions
     {
+        // Reusable generic extension method on IQueryable available to all resources
         public static IQueryable<T> ApplySort<T>(this IQueryable<T> source, string orderBy,
-            Dictionary<string, PropertyMappingValue> mappingDictionary)
+                                                 Dictionary<string, PropertyMappingValue> mappingDictionary)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));

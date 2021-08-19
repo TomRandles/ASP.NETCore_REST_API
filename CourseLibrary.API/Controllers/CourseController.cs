@@ -15,6 +15,8 @@ using CourseLibrary.API.Services.Interfaces;
 namespace CourseLibrary.API.Controllers
 {
     [ApiController]
+    // Route template - attribute route on a controller
+    // Courses are children of specific author 
     [Route("api/authors/{authorId}/courses")]
     public class CourseController : ControllerBase
     {
@@ -158,7 +160,9 @@ namespace CourseLibrary.API.Controllers
 
                 var courseToReturn = _mapper.Map<CourseDto>(courseToAdd);
 
-                return CreatedAtRoute("GetCourseForAuthor", new { authorId, courseToReturn.Id }, courseToReturn);
+                return CreatedAtRoute("GetCourseForAuthor", 
+                                      new { authorId, courseToReturn.Id }, 
+                                      courseToReturn);
             }
 
             var courseToPatch = _mapper.Map<CourseUpdateDto>(courseFromDb);
@@ -196,6 +200,8 @@ namespace CourseLibrary.API.Controllers
             }
 
             await _courseRepository.DeleteCourseAsync(courseFromDb);
+            
+            // No response body - NoContent
             return NoContent();
         }
 

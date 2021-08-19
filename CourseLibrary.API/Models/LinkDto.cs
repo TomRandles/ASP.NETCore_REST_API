@@ -1,5 +1,6 @@
 ﻿namespace CourseLibrary.API.Models
 {
+    // LinkDto - part of HATEOAS implementation on API
     public class LinkDto
     {
         public string Href { get; private set; }

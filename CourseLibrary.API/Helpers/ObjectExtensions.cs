@@ -5,6 +5,7 @@ using System.Reflection;
 
 namespace CourseLibrary.API.Helpers
 {
+    // Use a different class for a single object for performance reasons
     public static class ObjectExtensions
     {
         public static ExpandoObject ShapeData<TSource>(this TSource source, string fields)
@@ -18,7 +19,6 @@ namespace CourseLibrary.API.Helpers
 
             // Use reflection to get the property info. This will be done on one
             // object, as reflection is expensive.
-    
 
             // Check for empty fields
             if (string.IsNullOrWhiteSpace(fields))
@@ -43,8 +43,12 @@ namespace CourseLibrary.API.Helpers
 
             foreach (var field in fieldsAfterSplit)
             {
+                // trim field of leading or trailing spaces.
                 var propertyName = field.Trim();
 
+                // Use reflection to get the property on the source object
+                // Focus on public and instance fields. 
+                // Specifying a binding flag overwrites existing binding flags.
                 var propertyInfo = typeof(TSource).GetProperty(propertyName,
                     BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 

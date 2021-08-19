@@ -138,6 +138,7 @@ namespace CourseLibrary.API.Services
                 // Get property mapping dictionary
                 var authorPropertyMapping = propertyMappingService.GetPropertyMapping<AuthorDto, Author>();
 
+                // ApplySort - generic extension method on IQueryable available to all resources
                 collection = collection.ApplySort(resourceParameters.OrderBy, authorPropertyMapping);
             }
 

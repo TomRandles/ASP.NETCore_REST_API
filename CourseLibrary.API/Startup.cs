@@ -43,7 +43,7 @@ namespace CourseLibrary.API
               // Preferred Json package as of 3.x 
               .AddNewtonsoftJson(setupAction =>
               {
-                  setupAction.SerializerSettings.ContractResolver = 
+                  setupAction.SerializerSettings.ContractResolver =
                       new CamelCasePropertyNamesContractResolver();
               })
               // .Net 3.x preferred way of adding formatters
@@ -96,6 +96,14 @@ namespace CourseLibrary.API
                     };
                 });
 
+            // AddTransient – advised by ASP.NET team for lightweight stateless services.
+            services.AddTransient<IPropertyMappingService, PropertyMappingService>();
+
+            services.AddTransient<IPropertyCheckerService, PropertyCheckerService>();
+
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+            services.AddScoped<IAuthorLibraryRepository, AuthorLibraryRepository>();
             services.AddScoped<ICourseLibraryRepository, CourseLibraryRepository>();
 
             services.AddDbContext<CourseLibraryContext>(options =>

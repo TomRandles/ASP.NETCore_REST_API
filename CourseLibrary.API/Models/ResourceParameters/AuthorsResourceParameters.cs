@@ -6,6 +6,8 @@
         public string SearchQuery { get; set; }
 
         // Give the pagination parameters default values
+        // Max page size per resource collection rather
+        // than a general max page size
         const int MAX_PAGE_SIZE = 20;
         public int PageNumber { get; set; } = 1;
 

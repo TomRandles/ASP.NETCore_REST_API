@@ -9,6 +9,10 @@ namespace CourseLibrary.API.Services
 {
     public class PropertyMappingService : IPropertyMappingService
     {
+        // Use marker interface (interface without methods) to resolve
+        // private IList<PropertyMapping<TSource, TDestination>> __propertyMapping;
+        // TSource and TDestination cannot be resolved
+        private IList<IPropertyMapping> _propertyMappings = new List<IPropertyMapping>();
         public Dictionary<string, PropertyMappingValue> _authorPropertyMapping { get; set; } =
             new Dictionary<string, PropertyMappingValue>(StringComparer.OrdinalIgnoreCase)
             {
@@ -27,6 +31,7 @@ namespace CourseLibrary.API.Services
         {
             var propertyMapping = GetPropertyMapping<TSource, TDestination>();
 
+            // All ok if no fields present
             if (string.IsNullOrWhiteSpace(fields))
                 return true;
 
@@ -51,8 +56,7 @@ namespace CourseLibrary.API.Services
             return true;
         }
 
-        // Use marker interface to resolve 
-        private IList<IPropertyMapping> _propertyMappings = new List<IPropertyMapping>();
+
         public Dictionary<string, PropertyMappingValue> GetPropertyMapping<TSource, TDestination>()
         {
             // Look for matching mapping

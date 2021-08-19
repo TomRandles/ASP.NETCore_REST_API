@@ -47,13 +47,14 @@ namespace CourseLibrary.API.Controllers
         }
         
         // Implement API outer contract
-        [HttpGet(Name = "GetAuthors")]
+        [HttpGet(Name = "GetAuthorsAsync")]
         // Support the HTTP HEAD method. Will not include a response body.
         [HttpHead]
         // IActionResult - Defines an action return contract. Returns the result of an action method.
         // The ActionResult types represent various HTTP status codes. 
         public async Task<IActionResult> GetAuthorsAsync(
-        // Complex type AuthorsResourceParameters requires a [FromQuery] attribute - else will result in 415 SC
+        // Complex type AuthorsResourceParameters requires a [FromQuery] attribute
+        // - else will result in 415 SC
         [FromQuery] AuthorsResourceParameters resourceParameters)
         {
             // Validate incoming orderBy, if present
@@ -63,7 +64,7 @@ namespace CourseLibrary.API.Controllers
                 return BadRequest();
             }
 
-            // Check fields. if present, are valid properties
+            // Check data shaping fields. if present, are valid properties
             if (!_propertyCheckerService.TypeHasProperties<AuthorDto>(resourceParameters.Fields))
             {
                 return BadRequest();
@@ -79,14 +80,14 @@ namespace CourseLibrary.API.Controllers
                 totalPages = authors.TotalPages,
             };
 
-            //Add to header
+            // Add to header. Note: doesn't have to be JSON
             Response.Headers.Add("X-Pagination",
                 JsonSerializer.Serialize(paginationMetaData));
 
             var links = CreateLinksForAuthors(resourceParameters, authors.HasNext, authors.HasPrevious);
-
+            
             var shapedAuthors = _mapper.Map<IEnumerable<AuthorDto>>(authors)
-                                         .ShapeData(resourceParameters.Fields);
+                                       .ShapeData(resourceParameters.Fields);
 
             var shapedAuthorsWithLinks = shapedAuthors.Select(author =>
             {
@@ -234,7 +235,7 @@ namespace CourseLibrary.API.Controllers
 
                 //Implement HATEOAS
                 var links = CreateLinksForAuthor(authorEntity.Id);
-
+                
                 // Cast as expando object - IDictionary<string, object>
                 var linkedResourceToReturn = _mapper.Map<AuthorDto>(authorEntity)
                                                     .ShapeData(null)
@@ -357,8 +358,12 @@ namespace CourseLibrary.API.Controllers
                     );
             }
 
+
+
             return links;
         }
+
+        // Supports HATEOAS in API
         private IEnumerable<LinkDto> CreateLinksForAuthor(Guid authorId, string fields = null)
         {
             var links = new List<LinkDto>();
