@@ -85,7 +85,7 @@ namespace CourseLibrary.API.Controllers
                 JsonSerializer.Serialize(paginationMetaData));
 
             var links = CreateLinksForAuthors(resourceParameters, authors.HasNext, authors.HasPrevious);
-            
+
             var shapedAuthors = _mapper.Map<IEnumerable<AuthorDto>>(authors)
                                        .ShapeData(resourceParameters.Fields);
 

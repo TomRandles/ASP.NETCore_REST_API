@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using CourseLibrary.API.Services.Interfaces;
+using Marvin.Cache.Headers;
 
 namespace CourseLibrary.API.Controllers
 {
@@ -55,7 +56,11 @@ namespace CourseLibrary.API.Controllers
         [HttpHead("{courseId}")]
         // Sets the parameters necessary for setting appropriate headers in response caching. Cache for 120 seconds
         // Overrides controller level ResponseCache attribute settings
-        [ResponseCache(Duration =120)]
+        // [ResponseCache(Duration =120)]
+        // Allows resource level expiration model related option settings. Can also set at controller level.
+        [HttpCacheExpiration(CacheLocation = CacheLocation.Public, MaxAge = 1000)]
+        // Allows resource level validation model related option settings. Can also set at controller level.
+        [HttpCacheValidation(MustRevalidate = false)]
         public async Task<ActionResult<IEnumerable<AuthorDto>>> GetCourseForAuthor(Guid authorId, Guid courseId)
         {
             if (!await _authorRepository.AuthorExistsAsync(authorId))

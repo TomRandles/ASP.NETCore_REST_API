@@ -8,14 +8,14 @@ namespace CourseLibrary.API.Helpers
     // Use a different class for a single object for performance reasons
     public static class ObjectExtensions
     {
-        public static ExpandoObject ShapeData<TSource>(this TSource source, string fields)
+        public static IEnumerable<ExpandoObject> ShapeData<TSource>(this TSource source, string fields)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
-            var objectToReturn = new ExpandoObject();
+            var objectToReturn = new List<ExpandoObject>();
 
             // Use reflection to get the property info. This will be done on one
             // object, as reflection is expensive.

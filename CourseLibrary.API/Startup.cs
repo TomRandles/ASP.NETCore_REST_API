@@ -31,6 +31,18 @@ namespace CourseLibrary.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // Global app expiration rules
+            services.AddHttpCacheHeaders((expirationModelOptions ) =>
+            {
+                expirationModelOptions.MaxAge = 60;
+                expirationModelOptions.CacheLocation = Marvin.Cache.Headers.CacheLocation.Private;
+            },
+            // Global app cache validation rules
+            (validationModelOptions) =>
+            {
+                validationModelOptions.MustRevalidate = true;
+            });
+
             // Adding a cache store with the ResponseCaching middleware
             services.AddResponseCaching();
 
@@ -173,9 +185,15 @@ namespace CourseLibrary.API
                 });
             }
 
-            // Make sure UseResponseCaching() is added before UseRouting() and UseEndpoints()
+            // Make sure UseResponseCaching() and UseHttpCacheHeaders() are added before UseRouting() and UseEndpoints()
             // Ensures that the cache middleware can serve something up before the rest of the MVC logic is routed to or executed. 
+
             app.UseResponseCaching();
+
+            // Ensures that the request pipeline does not continue to API routing and endpoints if cache validation ok
+            // NB: add after UseResponseCaching() - ETag generating middleware not requred if response can be served from the
+            // cache
+            app.UseHttpCacheHeaders();
 
             app.UseStatusCodePages();
 
