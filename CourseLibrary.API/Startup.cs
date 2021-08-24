@@ -31,12 +31,19 @@ namespace CourseLibrary.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // Adding a cache store with the ResponseCaching middleware
+            services.AddResponseCaching();
 
             services.AddControllers(setupActions =>
             {
                 // Will return a 406 - media not supported if Accept header media type not supported.
                 setupActions.ReturnHttpNotAcceptable = true;
-                // Add XML formatter. This one supports date time offset value, used in code
+                // CacheProfiles - a dictionary - add key and new CacheProfile object
+                setupActions.CacheProfiles.Add("240SecondsCacheProfile",
+                                                   new CacheProfile()
+                                                   {
+                                                       Duration = 240
+                                                   });
             })
               // Order important here between json (now default again) and xml. Accept & Content-type header
               // overrides these defaults. 
@@ -47,6 +54,7 @@ namespace CourseLibrary.API
                       new CamelCasePropertyNamesContractResolver();
               })
               // .Net 3.x preferred way of adding formatters
+              // Add XML formatter. This one supports date time offset value, used in code
               .AddXmlDataContractSerializerFormatters()
               .ConfigureApiBehaviorOptions(setupAction =>
                 {
@@ -112,6 +120,7 @@ namespace CourseLibrary.API
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             });
 
+            // Configuration for vendor specific media types
             // Add media type to existing formatter
             services.Configure<MvcOptions>(config =>
             {
@@ -120,10 +129,10 @@ namespace CourseLibrary.API
 
                 if (newtonsoftJsonOutputFormatter != null)
                 {
+                    // Adds support for this media type application wide
                     newtonsoftJsonOutputFormatter.SupportedMediaTypes.Add("application/vnd.marvin.hateoas+json");
                 }
             });
-
 
             // Transient - for lightweight, stateless services - recommended
             services.AddTransient<IPropertyMappingService, PropertyMappingService>();
@@ -163,6 +172,10 @@ namespace CourseLibrary.API
                     });
                 });
             }
+
+            // Make sure UseResponseCaching() is added before UseRouting() and UseEndpoints()
+            // Ensures that the cache middleware can serve something up before the rest of the MVC logic is routed to or executed. 
+            app.UseResponseCaching();
 
             app.UseStatusCodePages();
 

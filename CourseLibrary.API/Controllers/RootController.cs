@@ -4,6 +4,10 @@ using System.Collections.Generic;
 
 namespace CourseLibrary.API.Controllers
 {
+    // Supports self discovery with a root document
+    // Root document - starting point for consumers of the API.
+    // API consumers can start at this point to learn how to interact with the rest of the API
+    // https://host/api 
     [Route("api")]
     [ApiController]
     public class RootController : ControllerBase
@@ -11,6 +15,8 @@ namespace CourseLibrary.API.Controllers
         [HttpGet(Name = "GetRoot")]
         public IActionResult GetRoot()
         {
+            // Generate links to the document itself and links to actions at root level
+
             var links = new List<LinkDto>();
 
             links.Add(

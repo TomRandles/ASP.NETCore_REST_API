@@ -12,6 +12,7 @@ namespace CourseLib.Domain.Models
 
         public string LastName { get; set; }
 
+        // Represents a point in time relative to Coordinated Universal Time(UTC).
         public string DateTimeOffset { get; set; }
 
         public string MainCategory { get; set; }

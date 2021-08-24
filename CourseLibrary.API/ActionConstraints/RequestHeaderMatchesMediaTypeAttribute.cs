@@ -5,6 +5,9 @@ using System;
 
 namespace CourseLibrary.API.ActionConstraints
 {
+    // Action Constraint - Allow the selection of an action based on, for example, the content-type header.
+    //                   - ensures the correct action is selected on the controller
+    // Action constraint attribute
     [AttributeUsage(AttributeTargets.All, Inherited = true, AllowMultiple = true)]
     public class RequestHeaderMatchesMediaTypeAttribute : Attribute, IActionConstraint
     {
@@ -19,7 +22,7 @@ namespace CourseLibrary.API.ActionConstraints
             _requestHeaderToMatch = requestHeaderToMatch ??
                 throw new ArgumentNullException(nameof(requestHeaderToMatch));
 
-            // Check if media types are valid 
+            // Check if media types are valid media types and add them to the collection
             if (MediaTypeHeaderValue.TryParse(mediaType, out MediaTypeHeaderValue parsedMediaType))
             {
                 _mediaTypes.Add(parsedMediaType);

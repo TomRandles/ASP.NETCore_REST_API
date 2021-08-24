@@ -89,9 +89,10 @@ namespace CourseLibrary.API.Controllers
             var shapedAuthors = _mapper.Map<IEnumerable<AuthorDto>>(authors)
                                        .ShapeData(resourceParameters.Fields);
 
+            // create authors (collection) for return with HATEOAS support 
             var shapedAuthorsWithLinks = shapedAuthors.Select(author =>
             {
-                IDictionary<string, object> authorAsDictionary = author as IDictionary<string, object>;
+                var authorAsDictionary = author as IDictionary<string, object>;
                 var authorLinks = CreateLinksForAuthor((Guid)authorAsDictionary["Id"]);
                 authorAsDictionary.Add("links", authorLinks);
                 return authorAsDictionary;
@@ -107,8 +108,8 @@ namespace CourseLibrary.API.Controllers
             return Ok(linkedCollectionResource);
         }
 
-        // Pass all types acceptable for this action. NB - restrictive. Returns 406 if not found.
-        // Can be added to controller or globally
+        // All types acceptable for this action. NB - restrictive. Returns 406 if not found.
+        // Can be added at the controller level or globally (global app support).
         [Produces("application/json", 
                   "application/vnd.marvin.hateoas+json",
                   "application/vnd.marvin.author.full+json",
@@ -124,7 +125,8 @@ namespace CourseLibrary.API.Controllers
                                       // FromHeader - bind the property to a header entry
                                       [FromHeader(Name = "Accept")] string mediaType)
         {
-            // Check mediaType - assumes only one type passed
+            // Using Vendor Specific media type - captured from HTTP request header Accept field
+            // Check mediaType - assumes only one type passed. TryParseList for list of media types.
             if (!MediaTypeHeaderValue.TryParse(mediaType, out MediaTypeHeaderValue parsedMediaType))
             {
                 return BadRequest();
@@ -144,6 +146,7 @@ namespace CourseLibrary.API.Controllers
 
             IEnumerable<LinkDto> links = new List<LinkDto>();
 
+            // Content negotiation with Vendor Specific Media Types
             var includeLinks = parsedMediaType.SubTypeWithoutSuffix
                 .EndsWith("hateoas", StringComparison.InvariantCultureIgnoreCase);
 
@@ -180,10 +183,12 @@ namespace CourseLibrary.API.Controllers
 
             return Ok(friendlyResourceToReturn);
         }
-
+        // NB: CreateAuthorWithDateOfDeath is the more specific action - needs to be placed before CreateAuthor method
         [HttpPost(Name = "CreateAuthorWithDateOfDeath")]
+        // Action constraint attribute - content type must match this media type for routing to this action
         [RequestHeaderMatchesMediaType("Content-Type",
                                        "application/vnd.marvin.authorforcreationwithdateofdeath+json")]
+        // Consume attribute - restricts what media type an action can consume
         [Consumes("application/vnd.marvin.authorforcreationwithdateofdeath+json")]
         public async Task<ActionResult<AuthorDto>> CreateAuthorWithDateOfDeath([FromBody] AuthorCreateWithDateOfDeathDto author)
         {
@@ -328,6 +333,8 @@ namespace CourseLibrary.API.Controllers
             }
         }
 
+        // Create links to support HATEOAS requirements
+        // Includes pagination links
         private IEnumerable<LinkDto> CreateLinksForAuthors(AuthorsResourceParameters resourceParameters,
                                                            bool hasNext, 
                                                            bool hasPrevious)
@@ -357,9 +364,6 @@ namespace CourseLibrary.API.Controllers
                     "nextPage", "GET")
                     );
             }
-
-
-
             return links;
         }
 

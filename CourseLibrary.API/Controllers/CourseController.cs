@@ -18,6 +18,8 @@ namespace CourseLibrary.API.Controllers
     // Route template - attribute route on a controller
     // Courses are children of specific author 
     [Route("api/authors/{authorId}/courses")]
+    // Apply response cache profile at controller level
+    [ResponseCache(CacheProfileName ="240SecondsCacheProfile")]
     public class CourseController : ControllerBase
     {
         private readonly IAuthorLibraryRepository _authorRepository;
@@ -51,6 +53,9 @@ namespace CourseLibrary.API.Controllers
 
         [HttpGet("{courseId}", Name = "GetCourseForAuthor")]
         [HttpHead("{courseId}")]
+        // Sets the parameters necessary for setting appropriate headers in response caching. Cache for 120 seconds
+        // Overrides controller level ResponseCache attribute settings
+        [ResponseCache(Duration =120)]
         public async Task<ActionResult<IEnumerable<AuthorDto>>> GetCourseForAuthor(Guid authorId, Guid courseId)
         {
             if (!await _authorRepository.AuthorExistsAsync(authorId))
