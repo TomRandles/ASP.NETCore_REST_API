@@ -14,7 +14,7 @@ namespace CourseLibrary.API.Services
 {
     public class AuthorLibraryRepository : IAuthorLibraryRepository, IDisposable
     {
-        private readonly CourseLibraryContext _context;
+        private CourseLibraryContext _context;
         private readonly IPropertyMappingService propertyMappingService;
 
         public AuthorLibraryRepository(CourseLibraryContext context, 
@@ -96,18 +96,7 @@ namespace CourseLibrary.API.Services
             var retVal = await _context.SaveChangesAsync() >= 0;
             return retVal;
         }
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-               // dispose resources when needed
-            }
-        }
+
         public async Task<PagedList<Author>> GetAuthorsAsync(AuthorsResourceParameters resourceParameters)
         {
             if (resourceParameters == null)
@@ -148,6 +137,22 @@ namespace CourseLibrary.API.Services
                                                                 resourceParameters.PageSize);
 
             return pagedList;
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            // Ensure that the garbage collector does not call the finalizer for 
+            // the repository
+            GC.SuppressFinalize(this);
+        }
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_context != null)
+                    _context.Dispose();
+                _context = null;
+            }
         }
     }
 }

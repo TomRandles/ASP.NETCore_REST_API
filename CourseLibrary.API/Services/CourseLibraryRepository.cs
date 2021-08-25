@@ -11,7 +11,7 @@ namespace CourseLibrary.API.Services
 {
     public class CourseLibraryRepository : ICourseLibraryRepository, IDisposable
     {
-        private readonly CourseLibraryContext _context;
+        private CourseLibraryContext _context;
         private readonly IPropertyMappingService propertyMappingService;
 
         public CourseLibraryRepository(CourseLibraryContext context, IPropertyMappingService propertyMappingService )
@@ -81,18 +81,20 @@ namespace CourseLibrary.API.Services
         {
             return await _context.SaveChangesAsync() >= 0;
         }
-
         public void Dispose()
         {
             Dispose(true);
+            // Ensure that the garbage collector does not call the finalizer for 
+            // the repository
             GC.SuppressFinalize(this);
         }
-
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
             {
-               // dispose resources when needed
+                if (_context != null)
+                    _context.Dispose();
+                _context = null;
             }
         }
     }
