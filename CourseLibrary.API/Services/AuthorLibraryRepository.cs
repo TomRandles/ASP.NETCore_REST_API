@@ -142,7 +142,7 @@ namespace CourseLibrary.API.Services
         {
             Dispose(true);
             // Ensure that the garbage collector does not call the finalizer for 
-            // the repository
+            // the repository, since the repository has already been cleaned up.
             GC.SuppressFinalize(this);
         }
         protected virtual void Dispose(bool disposing)
