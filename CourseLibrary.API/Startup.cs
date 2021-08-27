@@ -123,9 +123,14 @@ namespace CourseLibrary.API
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
+            // Scoped - equal to or shorter than the Db Context (scoped)
+            // transient - New instance for every call. Would lose any state our repository might hold
+            // if requested by multiple parts of the code.
+            // Scoped - correct option
             services.AddScoped<IAuthorLibraryRepository, AuthorLibraryRepository>();
             services.AddScoped<ICourseLibraryRepository, CourseLibraryRepository>();
 
+            // DbContext - scoped lifetime by default. Dispose of the db context after every request.
             services.AddDbContext<CourseLibraryContext>(options =>
             {
                 options.UseSqlServer(Configuration.GetConnectionString("DbConnection"))
